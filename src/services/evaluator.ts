@@ -63,7 +63,7 @@ async function evaluateSingleMetric(
 2. Step-by-step, reason through how the Actual Output scores against the Metric Definition.
 3. Assign a final score from 0 to 10 (integers only) based on your reasoning.`;
 
-    if (metric.id === 'g_eval') {
+    if (metric.id === 'g_eval' || metric.id.startsWith('custom_geval_')) {
       instructions = `1. Read the inputs and Evaluation Criteria carefully.
 2. First, generate a series of clear, objective evaluation steps based solely on the provided Evaluation Criteria.
 3. Second, execute those evaluation steps strictly on the Actual Output (and other provided data).
@@ -81,7 +81,7 @@ ${item.input ? `- Input/Prompt:\n${item.input}\n` : ''}
 ${item.actualOutput ? `- Actual Output (Response):\n${item.actualOutput}\n` : ''}
 ${item.expectedOutput && metric.requiresExpectedOutput ? `- Expected Output (Reference):\n${item.expectedOutput}\n` : ''}
 ${item.context && metric.requiresContext ? `- Context:\n${item.context}\n` : ''}
-${item.criteria ? `- Evaluation Criteria / Guidelines:\n${item.criteria}\n` : ''}
+${(metric.customCriteria || item.criteria) ? `- Evaluation Criteria / Guidelines:\n${metric.customCriteria || item.criteria}\n` : ''}
 
 **Instructions**:
 ${instructions}

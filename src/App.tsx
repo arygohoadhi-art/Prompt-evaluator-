@@ -21,10 +21,13 @@ export default function App() {
       try {
         const parsed = JSON.parse(saved);
         // Revive Date objects
-        const revived = parsed.map((entry: any) => ({
-          ...entry,
-          timestamp: new Date(entry.timestamp)
-        }));
+        const revived = parsed
+          .filter((entry: any) => entry && typeof entry === 'object')
+          .map((entry: any) => ({
+            ...entry,
+            timestamp: new Date(entry.timestamp)
+          }))
+          .filter((entry: any) => !isNaN(entry.timestamp.getTime()));
         setHistory(revived);
       } catch (e) {
         console.error("Failed to parse history", e);
@@ -88,7 +91,7 @@ export default function App() {
         results: avgResults
       };
       
-      const newHistory = [...history, newEntry].slice(-10); // keep last 10
+      const newHistory = [...history, newEntry].slice(-50); // keep last 50
       setHistory(newHistory);
       localStorage.setItem('evalHistory', JSON.stringify(newHistory));
       

@@ -54,6 +54,25 @@ const METRIC_CATEGORIES = [
   }
 ];
 
+const CUSTOM_TEMPLATES = [
+  {
+    name: 'Summarization Quality',
+    criteria: 'Evaluate the summary based on these elements:\n1. Accuracy: Does it accurately reflect the source text?\n2. Conciseness: Does it avoid unnecessary details?\n3. Comprehensiveness: Does it capture the main points?\nAssign a score from 0 to 10 based on how well it summarizes the text.'
+  },
+  {
+    name: 'RAG Faithfulness',
+    criteria: 'Evaluate if the actual output is strictly faithful to the provided context. The output must NOT introduce any information (hallucinations) that is absent from the context.\nScore 10 if completely faithful. Deduct points proportionally for unverified claims or external knowledge.'
+  },
+  {
+    name: 'Creative Writing',
+    criteria: 'Evaluate the writing for creativity, engaging tone, and stylistic flair.\n1. Originality: Are the ideas and phrasing unique?\n2. Flow: Is the writing rhythm smooth and engaging?\n3. Emotion: Does it successfully evoke the intended feeling?\nScore 10 for exceptionally creative and engaging text.'
+  },
+  {
+    name: 'Tone & Style',
+    criteria: 'Evaluate if the output adheres strictly to the required tone (e.g., professional, casual, empathetic).\nCheck for appropriate vocabulary, sentence structure, and overall demeanor. Score 10 if the tone perfectly matches expectations.'
+  }
+];
+
 interface EvalFormProps {
   onSubmit: (params: BatchEvalParams) => void;
   isEvaluating: boolean;
@@ -76,11 +95,53 @@ export function EvalForm({ onSubmit, isEvaluating }: EvalFormProps) {
 
   const [selectedMetrics, setSelectedMetrics] = useState<string[]>(['answer_relevancy', 'toxicity', 'answer_correctness', 'g_eval']);
 
+  // Custom Metrics State
+  const [metricCategories, setMetricCategories] = useState(METRIC_CATEGORIES);
+  const [showAddCustom, setShowAddCustom] = useState(false);
+  const [newCustomName, setNewCustomName] = useState('');
+  const [newCustomCriteria, setNewCustomCriteria] = useState('');
+
+  const handleAddCustomMetric = () => {
+    if (!newCustomName.trim() || !newCustomCriteria.trim()) {
+      toast.error('Name and Criteria are required for a custom metric.');
+      return;
+    }
+    const newId = `custom_geval_${Date.now()}`;
+    EVAL_METRICS[newId] = {
+      id: newId,
+      name: newCustomName,
+      description: 'Custom user-defined G-Eval metric.',
+      definition: 'Evaluate the actual output strictly based on the provided "Evaluation Criteria / Guidelines". Use a Chain-of-Thought approach to reason through how well the output satisfies the criteria. Score 10 if it perfectly meets the criteria. Score 0 if it completely fails to meet the criteria.',
+      requiresContext: false,
+      requiresExpectedOutput: false,
+      requiresCriteria: true,
+      customCriteria: newCustomCriteria,
+    };
+    
+    setMetricCategories(prev => {
+      const customCat = prev.find(c => c.name === 'Custom');
+      if (customCat) {
+        return prev.map(c => 
+          c.name === 'Custom' 
+            ? { ...c, metrics: [...c.metrics, newId] }
+            : c
+        );
+      }
+      return prev;
+    });
+
+    setSelectedMetrics(prev => [...prev, newId]);
+    setShowAddCustom(false);
+    setNewCustomName('');
+    setNewCustomCriteria('');
+    toast.success('Custom metric added!');
+  };
+
   const filteredCategories = useMemo(() => {
-    if (!searchQuery.trim()) return METRIC_CATEGORIES;
+    if (!searchQuery.trim()) return metricCategories;
     const lowerQuery = searchQuery.toLowerCase();
     
-    return METRIC_CATEGORIES.map(cat => ({
+    return metricCategories.map(cat => ({
       ...cat,
       metrics: cat.metrics.filter(mId => {
         const metric = EVAL_METRICS[mId];
@@ -239,6 +300,67 @@ export function EvalForm({ onSubmit, isEvaluating }: EvalFormProps) {
             {filteredCategories.length === 0 && (
               <div className="text-center py-8 text-gray-500 text-sm bg-[#111113] rounded-xl border border-white/5 border-dashed">
                 No metrics found matching "{searchQuery}"
+              </div>
+            )}
+
+            {showAddCustom ? (
+              <div className="mt-6 p-4 rounded-xl border border-purple-500/30 bg-purple-500/5 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-purple-400">Add Custom G-Eval Metric</h3>
+                  <button type="button" onClick={() => setShowAddCustom(false)} className="text-xs text-zinc-500 hover:text-zinc-300">Cancel</button>
+                </div>
+                <div className="space-y-3">
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {CUSTOM_TEMPLATES.map((tmpl) => (
+                      <button
+                        key={tmpl.name}
+                        type="button"
+                        onClick={() => {
+                          setNewCustomName(tmpl.name);
+                          setNewCustomCriteria(tmpl.criteria);
+                        }}
+                        className="px-2.5 py-1.5 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/20 rounded-md text-[10px] text-purple-300 transition-colors uppercase tracking-wider font-semibold"
+                      >
+                        {tmpl.name}
+                      </button>
+                    ))}
+                  </div>
+                  <div>
+                    <input
+                      type="text"
+                      value={newCustomName}
+                      onChange={e => setNewCustomName(e.target.value)}
+                      placeholder="Metric Name (e.g. Tone, Conciseness)"
+                      className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-purple-500/50"
+                    />
+                  </div>
+                  <div>
+                    <textarea
+                      value={newCustomCriteria}
+                      onChange={e => setNewCustomCriteria(e.target.value)}
+                      placeholder="Evaluation criteria and grading guidelines..."
+                      className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-purple-500/50 min-h-[80px]"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleAddCustomMetric}
+                    className="w-full py-2 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 rounded-lg text-xs font-medium transition-colors"
+                  >
+                    Add Metric
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="mt-6 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setShowAddCustom(true)}
+                  className="flex items-center gap-2 text-xs font-medium text-purple-400 hover:text-purple-300 bg-purple-500/10 hover:bg-purple-500/20 px-4 py-2 rounded-lg transition-colors border border-purple-500/20"
+                >
+                  <Settings2 className="w-3.5 h-3.5" />
+                  Add Custom G-Eval Metric
+                </button>
               </div>
             )}
           </div>

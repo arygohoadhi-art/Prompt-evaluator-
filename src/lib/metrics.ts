@@ -6,6 +6,7 @@ export interface Metric {
   requiresContext: boolean;
   requiresExpectedOutput: boolean;
   requiresCriteria?: boolean;
+  customCriteria?: string;
 }
 
 export const EVAL_METRICS: Record<string, Metric> = {
