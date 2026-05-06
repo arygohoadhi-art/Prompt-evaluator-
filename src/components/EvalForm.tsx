@@ -4,6 +4,7 @@ import { EVAL_METRICS } from '../lib/metrics';
 import { cn } from '../lib/utils';
 import { Check, FileJson, FileText, Upload, FileSpreadsheet, Search, FileSearch, CheckCircle2, Lightbulb, Scale, Settings2, Play } from 'lucide-react';
 import { BatchEvalParams, EvalItem } from '../services/evaluator';
+import { toast } from 'sonner';
 
 const METRIC_CATEGORIES = [
   {
@@ -112,9 +113,10 @@ export function EvalForm({ onSubmit, isEvaluating }: EvalFormProps) {
         
         // Format to string
         setBatchJson(JSON.stringify(json, null, 2));
+        toast.success("File parsed successfully");
       } catch (err) {
         console.error("Error parsing Excel file:", err);
-        alert("Failed to parse Excel file. Please ensure it's a valid formats like .xlsx or .csv");
+        toast.error("Failed to parse file. Please ensure it's a valid format (.xlsx or .csv)");
       }
     };
     reader.readAsArrayBuffer(file);
@@ -127,7 +129,7 @@ export function EvalForm({ onSubmit, isEvaluating }: EvalFormProps) {
   const handleEvaluate = (e: React.FormEvent) => {
     e.preventDefault();
     if (selectedMetrics.length === 0) {
-      alert("Please select at least one metric.");
+      toast.warning("Please select at least one metric.");
       return;
     }
 
@@ -135,7 +137,7 @@ export function EvalForm({ onSubmit, isEvaluating }: EvalFormProps) {
 
     if (mode === 'single') {
       if (!actualOutput.trim()) {
-        alert("Actual Output is required for evaluation.");
+        toast.error("Actual Output is required for evaluation.");
         return;
       }
       items = [{ input, actualOutput, expectedOutput, context, criteria }];
@@ -156,12 +158,12 @@ export function EvalForm({ onSubmit, isEvaluating }: EvalFormProps) {
           criteria: item.criteria || ''
         }));
 
-        if (items.some(it => !it.actualOutput.trim())) {
-          alert("All items in the batch must have an 'actualOutput' column/key.");
+          if (items.some(it => !it.actualOutput?.trim())) {
+          toast.error("All items in the batch must have an 'actualOutput' field.");
           return;
         }
       } catch (err: any) {
-        alert("Invalid Batch JSON: " + err.message);
+        toast.error("Invalid Batch JSON: " + err.message);
         return;
       }
     }

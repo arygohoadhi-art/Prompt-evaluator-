@@ -7,6 +7,8 @@ import { ScoreChart } from './components/ScoreChart';
 import { TrendChart, HistoryEntry } from './components/TrendChart';
 import { checkBatchEvaluations, BatchEvalParams, BatchItemResult, EvalResult } from './services/evaluator';
 
+import { Toaster, toast } from 'sonner';
+
 export default function App() {
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [batchResults, setBatchResults] = useState<BatchItemResult[] | null>(null);
@@ -90,8 +92,9 @@ export default function App() {
       setHistory(newHistory);
       localStorage.setItem('evalHistory', JSON.stringify(newHistory));
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('Unhandled error during evaluation:', error);
+      toast.error(error.message || 'An error occurred during evaluation.');
     } finally {
       setIsEvaluating(false);
     }
@@ -101,11 +104,13 @@ export default function App() {
     if (confirm("Are you sure you want to clear your evaluation history?")) {
       setHistory([]);
       localStorage.removeItem('evalHistory');
+      toast.success("History cleared");
     }
   };
 
   const exportBatchResults = () => {
     if (!batchResults) return;
+    try {
     
     const data = batchResults.flatMap((b) => 
       b.results.map((r) => ({
@@ -126,10 +131,16 @@ export default function App() {
     const wb = xlsx.utils.book_new();
     xlsx.utils.book_append_sheet(wb, ws, "Batch Results");
     xlsx.writeFile(wb, `Evaluation_Batch_${Date.now()}.xlsx`);
+    toast.success("Results exported successfully");
+    } catch (error) {
+      toast.error("Failed to export results");
+    }
   };
 
   const exportHistory = () => {
     if (history.length === 0) return;
+    
+    try {
 
     const data = history.flatMap((entry) => 
       entry.results.map((r) => ({
@@ -144,10 +155,15 @@ export default function App() {
     const wb = xlsx.utils.book_new();
     xlsx.utils.book_append_sheet(wb, ws, "History");
     xlsx.writeFile(wb, `Evaluation_History.xlsx`);
+    toast.success("History exported successfully");
+    } catch (error) {
+      toast.error("Failed to export history");
+    }
   };
 
   return (
     <div className="h-screen w-full flex flex-col overflow-hidden bg-slate-950 text-slate-100">
+      <Toaster theme="dark" position="top-right" />
       {/* Top Navigation */}
       <header className="flex-shrink-0 h-14 border-b border-slate-800/50 flex items-center px-6 justify-between bg-slate-950/80 backdrop-blur-sm z-10">
         <div className="flex items-center gap-3">

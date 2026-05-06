@@ -1,7 +1,18 @@
 import { GoogleGenAI, Type } from '@google/genai';
 import { EVAL_METRICS } from '../lib/metrics';
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+let aiClient: GoogleGenAI | null = null;
+
+function getAiClient(): GoogleGenAI {
+  if (!aiClient) {
+    const key = import.meta.env.VITE_GEMINI_API_KEY;
+    if (!key) {
+      throw new Error('VITE_GEMINI_API_KEY environment variable is required');
+    }
+    aiClient = new GoogleGenAI({ apiKey: key });
+  }
+  return aiClient;
+}
 
 export interface EvalResult {
   metricId: string;
@@ -77,6 +88,7 @@ ${instructions}
 
 Provide your response in JSON format matching the schema.`;
 
+    const ai = getAiClient();
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: prompt,
