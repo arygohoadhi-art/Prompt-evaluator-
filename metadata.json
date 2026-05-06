@@ -1,0 +1,6 @@
+{
+  "name": "Prompt Evaluator",
+  "description": "An AI prompt evaluation tool similar to DeepEval. Evaluate LLM outputs using custom metrics like Coherence, Relevance and Groundedness.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
