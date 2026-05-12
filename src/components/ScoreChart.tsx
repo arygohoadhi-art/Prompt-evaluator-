@@ -12,7 +12,7 @@ export function ScoreChart({ results }: ScoreChartProps) {
       name: r.metricName,
       subject: r.metricName, // For radar
       score: r.score,
-      fullMark: 10,
+      fullMark: 5,
     }));
 
   if (data.length === 0) {
@@ -28,7 +28,7 @@ export function ScoreChart({ results }: ScoreChartProps) {
             <RadarChart cx="50%" cy="50%" outerRadius="80%" data={data}>
               <PolarGrid stroke="#27272a" />
               <PolarAngleAxis dataKey="subject" tick={{ fill: '#a1a1aa', fontSize: 11, fontWeight: 500 }} />
-              <PolarRadiusAxis angle={30} domain={[0, 10]} tick={{ fill: '#52525b' }} tickCount={6} />
+              <PolarRadiusAxis angle={30} domain={[0, 5]} tick={{ fill: '#52525b' }} tickCount={6} />
               <Radar
                 name="Score"
                 dataKey="score"
@@ -49,7 +49,7 @@ export function ScoreChart({ results }: ScoreChartProps) {
             >
               <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
               <XAxis dataKey="name" stroke="#52525b" tick={{ fill: '#a1a1aa', fontSize: 12 }} tickMargin={12} />
-              <YAxis domain={[0, 10]} stroke="#52525b" tick={{ fill: '#71717a' }} tickCount={6} />
+              <YAxis domain={[0, 5]} stroke="#52525b" tick={{ fill: '#71717a' }} tickCount={6} />
               <Tooltip
                 contentStyle={{ backgroundColor: '#18181b', borderColor: '#27272a', color: '#f4f4f5', borderRadius: '12px' }}
                 cursor={{ fill: 'rgba(255, 255, 255, 0.03)' }}
@@ -57,7 +57,7 @@ export function ScoreChart({ results }: ScoreChartProps) {
               <Legend wrapperStyle={{ paddingTop: '20px' }} />
               <Bar dataKey="score" fill="#c084fc" radius={[6, 6, 0, 0]} maxBarSize={60}>
                 {data.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.score >= 8 ? '#10b981' : entry.score >= 5 ? '#f59e0b' : '#f43f5e'} />
+                  <Cell key={`cell-${index}`} fill={entry.score >= 4 ? '#10b981' : entry.score >= 3 ? '#f59e0b' : '#f43f5e'} />
                 ))}
               </Bar>
             </BarChart>

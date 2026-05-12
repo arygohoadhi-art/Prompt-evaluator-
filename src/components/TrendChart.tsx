@@ -22,26 +22,30 @@ export function TrendChart({ history }: TrendChartProps) {
   const [smoothing, setSmoothing] = useState<Smoothing>('monotone');
   const [timeRange, setTimeRange] = useState<TimeRange>('all');
   const [showControls, setShowControls] = useState(false);
-  const [changeThreshold] = useState(2); // Score change > 2 is "significant"
+  const [changeThreshold] = useState(1); // Score change > 1 is "significant" on 1-5 scale
 
   const allMetrics = useMemo(() => {
     const metrics = new Set<string>();
     history.forEach(entry => {
-      entry.results.forEach(r => {
-        if (r.status === 'success') {
-          metrics.add(r.metricName);
-        }
-      });
+      if (Array.isArray(entry.results)) {
+        entry.results.forEach(r => {
+          if (r && r.status === 'success' && r.metricName) {
+            metrics.add(r.metricName);
+          }
+        });
+      }
     });
     return Array.from(metrics);
   }, [history]);
 
-  // Initialize selected metrics if empty
+  // Initialize selected metrics if empty and only once when they first appear
+  const [hasInitializedMetrics, setHasInitializedMetrics] = useState(false);
   useEffect(() => {
-    if (selectedMetrics.length === 0 && allMetrics.length > 0) {
+    if (!hasInitializedMetrics && allMetrics.length > 0) {
       setSelectedMetrics(allMetrics);
+      setHasInitializedMetrics(true);
     }
-  }, [allMetrics, selectedMetrics.length]);
+  }, [allMetrics, hasInitializedMetrics]);
 
   if (history.length < 2) {
     return null;
@@ -63,11 +67,13 @@ export function TrendChart({ history }: TrendChartProps) {
       raw: entry.results
     };
     
-    entry.results.forEach(r => {
-      if (r.status === 'success') {
-        dataPoint[r.metricName] = r.score;
-      }
-    });
+    if (Array.isArray(entry.results)) {
+      entry.results.forEach(r => {
+        if (r && r.status === 'success' && r.metricName) {
+          dataPoint[r.metricName] = r.score;
+        }
+      });
+    }
 
     return dataPoint;
   });
@@ -244,7 +250,7 @@ export function TrendChart({ history }: TrendChartProps) {
                 tickLine={false}
               />
               <YAxis 
-                domain={[0, 10]} 
+                domain={[0, 5]} 
                 stroke="#3f3f46" 
                 tick={{ fill: '#71717a', fontSize: 10 }} 
                 tickCount={6} 
